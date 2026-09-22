@@ -23,6 +23,7 @@ type Repositories struct {
 	// lion air
 	LionAirHTTP lionairrepository.HTTP
 	// misc
+	// ....
 }
 
 func NewRepositories(ctx context.Context, cfg *config.Config) (Repositories, error) {
