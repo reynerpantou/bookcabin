@@ -1,0 +1,66 @@
+app:
+  name: bookcabin
+  environment: development
+
+server:
+  port: 8080
+  read_timeout: 5s
+  write_timeout: 10s
+
+airlines:
+  airasia:
+    enabled: true
+    timeout: 3s
+    mock:
+      file_path: files/mock/airasia_search_response.json
+      min_delay: 50ms
+      max_delay: 150ms
+      success_rate: 0.9
+    rate_limit:
+      requests_per_second: 10
+      burst: 10
+    retry:
+      max_attempts: 3
+      base_delay: 100ms
+  batik_air:
+    enabled: true
+    timeout: 3s
+    mock:
+      file_path: files/mock/batik_air_search_response.json
+      min_delay: 200ms
+      max_delay: 400ms
+      success_rate: 1.0
+    rate_limit:
+      requests_per_second: 10
+      burst: 10
+    retry:
+      max_attempts: 3
+      base_delay: 100ms
+  garuda_indonesia:
+    enabled: true
+    timeout: 3s
+    mock:
+      file_path: files/mock/garuda_indonesia_search_response.json
+      min_delay: 50ms
+      max_delay: 100ms
+      success_rate: 1.0
+    rate_limit:
+      requests_per_second: 10
+      burst: 10
+    retry:
+      max_attempts: 3
+      base_delay: 100ms
+  lion_air:
+    enabled: true
+    timeout: 3s
+    mock:
+      file_path: files/mock/lion_air_search_response.json
+      min_delay: 100ms
+      max_delay: 200ms
+      success_rate: 1.0
+    rate_limit:
+      requests_per_second: 10
+      burst: 10
+    retry:
+      max_attempts: 3
+      base_delay: 100ms
