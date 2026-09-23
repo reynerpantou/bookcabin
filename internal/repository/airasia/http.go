@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/reynerpantou/bookcabin/common/config"
+	randomutil "github.com/reynerpantou/bookcabin/common/random"
 	timeutil "github.com/reynerpantou/bookcabin/common/time"
 	airasiamodel "github.com/reynerpantou/bookcabin/internal/model/airasia"
 	requestparamsmodel "github.com/reynerpantou/bookcabin/internal/model/request-params"
@@ -48,6 +49,9 @@ func (h *httpImpl) Search(ctx context.Context, params *requestparamsmodel.Reques
 	err := timeutil.SetRandomDelay(ctx, h.cfg.Mock.MinDelay.Duration(), h.cfg.Mock.MaxDelay.Duration())
 	if err != nil {
 		return airasiamodel.SearchResponse{}, err
+	}
+	if !randomutil.IsSuccess(h.cfg.Mock.SuccessRate) {
+		return airasiamodel.SearchResponse{}, fmt.Errorf("failed to get airasia search response")
 	}
 	return h.mockSearchResponse, nil
 }
