@@ -58,11 +58,7 @@ func (h *httpImpl) Search(ctx context.Context, params *requestparamsmodel.Reques
 	if !randomutil.IsSuccess(h.cfg.Mock.SuccessRate) {
 		return nil, fmt.Errorf("failed to get airasia search response")
 	}
-	unifiedFlights, err := mapToUnifiedFlights(h.mockSearchResponse)
-	if err != nil {
-		return nil, err
-	}
-	return unifiedFlights, nil
+	return mapToUnifiedFlights(h.mockSearchResponse)
 }
 
 func mapToUnifiedFlights(searchResponse airasiamodel.SearchResponse) ([]flight.Flight, error) {
@@ -102,7 +98,7 @@ func mapFlight(v airasiamodel.Flight) (flight.Flight, error) {
 		ID:       v.FlightCode + "_" + aviation.AirAsiaProvider.String(),
 		Provider: aviation.AirAsiaProvider.String(),
 		Airline: flight.Airline{
-			Name: v.Airline,
+			Name: aviation.AirAsiaProvider.String(),
 			Code: aviation.GetAirlineIATACodeFromFlightCode(v.FlightCode),
 		},
 		FlightNumber: v.FlightCode,
