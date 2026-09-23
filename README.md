@@ -4,11 +4,10 @@ Go service that queries four mocked airline providers concurrently, normalizes t
 
 ## Quick start
 
-Requirements: Go 1.26+.
+Requirements: Go 1.26+. Run from the repository root (config and mock files are loaded with relative paths).
 
 ```bash
 make run     # build to bin/bookcabin and start on :8080
-make test    # go test -race ./...
 ```
 
 Config: `files/etc/bookcabin.development.yaml` (timeouts, cache TTL, per-provider latency, failure rate, rate limit, retry).
