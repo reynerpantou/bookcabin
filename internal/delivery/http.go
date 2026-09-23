@@ -22,7 +22,7 @@ func NewHTTP(useCases usecase.UseCases) *HTTP {
 	h.router.Use(gin.Logger(), gin.Recovery())
 	h.router.GET("/search/flight/v1", h.FlightSearch)
 	h.router.POST("/search/flight/v1", h.FlightSearch)
-	h.router.GET("/health", nil)
+	h.router.GET("/health", h.Health)
 	return h
 }
 
