@@ -23,8 +23,11 @@ func NewHTTP(useCases usecase.UseCases) *HTTP {
 		flightSearchUseCase: useCases.FlightSearch,
 	}
 	h.router.Use(gin.Logger(), gin.Recovery())
+	// single search
 	h.router.GET("/search/flight/v1", h.FlightSearch)
 	h.router.POST("/search/flight/v1", h.FlightSearch)
+	// multi search : round trip & multi city
+	h.router.POST("/multi-search/flight/v1", h.FlightMultiSearch)
 	h.router.GET("/health", h.Health)
 	return h
 }
@@ -36,7 +39,6 @@ func (h *HTTP) Router() *gin.Engine {
 func (h *HTTP) FlightSearch(c *gin.Context) {
 	var params requestparamsmodel.RequestParams
 	var err error
-
 	// prepare parameters
 	switch c.Request.Method {
 	case http.MethodGet:
@@ -64,15 +66,26 @@ func (h *HTTP) FlightSearch(c *gin.Context) {
 		&params,
 	)
 	if err != nil {
-		switch {
-		case errors.Is(err, flightsearchusecase.ErrInvalidRequest):
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		case errors.Is(err, flightsearchusecase.ErrAllProvidersFailed):
-			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "flight providers unavailable"})
-		default:
-			slog.ErrorContext(c.Request.Context(), "flight search failed", "error", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to search flights"})
-		}
+		writeSearchError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, result)
+}
+
+func (h *HTTP) FlightMultiSearch(c *gin.Context) {
+	var params requestparamsmodel.MultiRequestParams
+	if err := c.ShouldBindJSON(&params); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	params.Normalize()
+	if err := params.Validate(); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	result, err := h.flightSearchUseCase.FlightMultiSearch(c.Request.Context(), &params)
+	if err != nil {
+		writeSearchError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, result)
@@ -100,4 +113,16 @@ func dropEmptyQueryParams(r *http.Request) {
 		}
 	}
 	r.URL.RawQuery = query.Encode()
+}
+
+func writeSearchError(c *gin.Context, err error) {
+	switch {
+	case errors.Is(err, flightsearchusecase.ErrInvalidRequest):
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	case errors.Is(err, flightsearchusecase.ErrAllProvidersFailed):
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "flight providers unavailable"})
+	default:
+		slog.ErrorContext(c.Request.Context(), "flight search failed", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to search flights"})
+	}
 }

@@ -15,7 +15,7 @@ flight_search:
 airlines:
   airasia:
     enabled: true
-    timeout: 3s
+    timeout: 1s
     mock:
       file_path: files/mock/airasia_search_response.json
       min_delay: 50ms
@@ -29,7 +29,7 @@ airlines:
       base_delay: 100ms
   batik_air:
     enabled: true
-    timeout: 3s
+    timeout: 1s
     mock:
       file_path: files/mock/batik_air_search_response.json
       min_delay: 200ms
@@ -43,7 +43,7 @@ airlines:
       base_delay: 100ms
   garuda_indonesia:
     enabled: true
-    timeout: 3s
+    timeout: 1s
     mock:
       file_path: files/mock/garuda_indonesia_search_response.json
       min_delay: 50ms
@@ -57,7 +57,7 @@ airlines:
       base_delay: 100ms
   lion_air:
     enabled: true
-    timeout: 3s
+    timeout: 1s
     mock:
       file_path: files/mock/lion_air_search_response.json
       min_delay: 100ms

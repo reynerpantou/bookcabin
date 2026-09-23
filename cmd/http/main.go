@@ -52,8 +52,10 @@ func run() error {
 	deliveryHTTP := delivery.NewHTTP(useCases)
 	// initialize http server
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", cfg.Server.Port),
-		Handler: deliveryHTTP.Router(),
+		Addr:         fmt.Sprintf(":%d", cfg.Server.Port),
+		Handler:      deliveryHTTP.Router(),
+		ReadTimeout:  cfg.Server.ReadTimeout,
+		WriteTimeout: cfg.Server.WriteTimeout,
 	}
 	// start server in background
 	serverErr := make(chan error, 1)

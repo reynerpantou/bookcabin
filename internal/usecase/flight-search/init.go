@@ -20,6 +20,7 @@ var (
 
 type UseCase interface {
 	FlightSearch(ctx context.Context, params *requestparamsmodel.RequestParams) (response.FlightSearchResponse, error)
+	FlightMultiSearch(ctx context.Context, params *requestparamsmodel.MultiRequestParams) (response.FlightMultiSearchResponse, error)
 }
 
 type ProviderRepository interface {
