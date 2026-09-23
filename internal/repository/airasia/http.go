@@ -3,12 +3,14 @@ package airasiarepository
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/avast/retry-go/v5"
 	"github.com/reynerpantou/bookcabin/common/aviation"
 	"github.com/reynerpantou/bookcabin/common/config"
 	randomutil "github.com/reynerpantou/bookcabin/common/random"
@@ -16,7 +18,10 @@ import (
 	airasiamodel "github.com/reynerpantou/bookcabin/internal/model/airasia"
 	"github.com/reynerpantou/bookcabin/internal/model/flight"
 	requestparamsmodel "github.com/reynerpantou/bookcabin/internal/model/request-params"
+	"golang.org/x/time/rate"
 )
+
+var errProviderUnavailable = errors.New("airasia: provider unavailable")
 
 type HTTP interface {
 	Search(ctx context.Context, params *requestparamsmodel.RequestParams) ([]flight.Flight, error)
@@ -25,6 +30,7 @@ type HTTP interface {
 type httpImpl struct {
 	cfg                config.AirlineConfig
 	mockSearchResponse airasiamodel.SearchResponse
+	limiter            *rate.Limiter
 }
 
 func NewHTTP(ctx context.Context, cfg config.AirlineConfig) (HTTP, error) {
@@ -39,6 +45,7 @@ func NewHTTP(ctx context.Context, cfg config.AirlineConfig) (HTTP, error) {
 	return &httpImpl{
 		cfg:                cfg,
 		mockSearchResponse: mockSearchresponse,
+		limiter:            rate.NewLimiter(rate.Limit(cfg.RateLimit.RequestsPerSecond), cfg.RateLimit.Burst),
 	}, nil
 }
 
@@ -46,6 +53,33 @@ func (h *httpImpl) Search(ctx context.Context, params *requestparamsmodel.Reques
 	if params == nil {
 		return nil, fmt.Errorf("params is nil")
 	}
+	var flights []flight.Flight
+	err := retry.New(
+		retry.Context(ctx),
+		retry.Attempts(uint(h.cfg.Retry.MaxAttempts)),
+		retry.Delay(h.cfg.Retry.BaseDelay.Duration()),
+		retry.MaxJitter(h.cfg.Retry.BaseDelay.Duration()),
+		retry.DelayType(retry.CombineDelay(retry.BackOffDelay, retry.RandomDelay)),
+		retry.LastErrorOnly(true),
+		retry.RetryIf(func(err error) bool {
+			return errors.Is(err, errProviderUnavailable) || errors.Is(err, context.DeadlineExceeded)
+		}),
+		retry.OnRetry(func(attempt uint, err error) {
+			slog.WarnContext(ctx, "airasia: search attempt failed", "attempt", attempt+1, "error", err)
+
+		}),
+	).Do(func() error {
+		if err := h.limiter.Wait(ctx); err != nil {
+			return fmt.Errorf("airasia: rate limit: %w", err)
+		}
+		var err error
+		flights, err = h.searchOnce(ctx, params)
+		return err
+	})
+	return flights, err
+}
+
+func (h *httpImpl) searchOnce(ctx context.Context, params *requestparamsmodel.RequestParams) ([]flight.Flight, error) {
 	ctx, cancel := context.WithTimeout(
 		ctx,
 		h.cfg.Timeout.Duration(),
@@ -56,7 +90,7 @@ func (h *httpImpl) Search(ctx context.Context, params *requestparamsmodel.Reques
 		return nil, err
 	}
 	if !randomutil.IsSuccess(h.cfg.Mock.SuccessRate) {
-		return nil, fmt.Errorf("failed to get airasia search response")
+		return nil, errProviderUnavailable
 	}
 	return mapToUnifiedFlights(h.mockSearchResponse)
 }

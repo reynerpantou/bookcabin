@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	requestparamsmodel "github.com/reynerpantou/bookcabin/internal/model/request-params"
@@ -39,6 +40,7 @@ func (h *HTTP) FlightSearch(c *gin.Context) {
 	// prepare parameters
 	switch c.Request.Method {
 	case http.MethodGet:
+		dropEmptyQueryParams(c.Request)
 		err = c.ShouldBindQuery(&params)
 	case http.MethodPost:
 		err = c.ShouldBindJSON(&params)
@@ -80,4 +82,22 @@ func (h *HTTP) Health(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status": "ok",
 	})
+}
+
+func dropEmptyQueryParams(r *http.Request) {
+	query := r.URL.Query()
+	for key, values := range query {
+		nonEmpty := values[:0]
+		for _, v := range values {
+			if strings.TrimSpace(v) != "" {
+				nonEmpty = append(nonEmpty, v)
+			}
+		}
+		if len(nonEmpty) == 0 {
+			query.Del(key)
+		} else {
+			query[key] = nonEmpty
+		}
+	}
+	r.URL.RawQuery = query.Encode()
 }

@@ -22,7 +22,7 @@ type Filters struct {
 	MaxPrice           *int64   `form:"maxPrice" json:"maxPrice" binding:"omitempty,min=0"`
 	MaxStops           *int     `form:"maxStops" json:"maxStops" binding:"omitempty,min=0"`
 	MaxDurationMinutes *int     `form:"maxDuration" json:"maxDuration" binding:"omitempty,min=1"`
-	Airlines           []string `form:"airlines" json:"airlines"` // IATA: QZ, ID, GA, JT
+	Airlines           []string `form:"airlines" json:"airlines" collection_format:"csv"` // IATA: QZ, ID, GA, JT
 	DepartureFrom      string   `form:"departureFrom" json:"departureFrom" binding:"omitempty,datetime=15:04"`
 	DepartureTo        string   `form:"departureTo" json:"departureTo" binding:"omitempty,datetime=15:04"`
 	ArrivalFrom        string   `form:"arrivalFrom" json:"arrivalFrom" binding:"omitempty,datetime=15:04"`

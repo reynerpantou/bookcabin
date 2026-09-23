@@ -3,7 +3,9 @@ module github.com/reynerpantou/bookcabin
 go 1.26.5
 
 require (
+	github.com/avast/retry-go/v5 v5.0.0
 	github.com/gin-gonic/gin v1.12.0
+	golang.org/x/time v0.16.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
