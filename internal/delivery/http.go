@@ -1,6 +1,8 @@
 package delivery
 
 import (
+	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -31,7 +33,7 @@ func (h *HTTP) Router() *gin.Engine {
 }
 
 func (h *HTTP) FlightSearch(c *gin.Context) {
-	var params *requestparamsmodel.RequestParams
+	var params requestparamsmodel.RequestParams
 	var err error
 
 	// prepare parameters
@@ -53,12 +55,18 @@ func (h *HTTP) FlightSearch(c *gin.Context) {
 	params.Normalize()
 	result, err := h.flightSearchUseCase.FlightSearch(
 		c.Request.Context(),
-		params,
+		&params,
 	)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "failed to search flights",
-		})
+		switch {
+		case errors.Is(err, flightsearchusecase.ErrInvalidRequest):
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		case errors.Is(err, flightsearchusecase.ErrAllProvidersFailed):
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "flight providers unavailable"})
+		default:
+			slog.ErrorContext(c.Request.Context(), "flight search failed", "error", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to search flights"})
+		}
 		return
 	}
 	c.JSON(http.StatusOK, result)
