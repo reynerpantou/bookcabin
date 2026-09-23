@@ -2,32 +2,58 @@ package flightsearchusecase
 
 import (
 	"context"
+	"errors"
+	"time"
 
+	"github.com/reynerpantou/bookcabin/common/aviation"
+	"github.com/reynerpantou/bookcabin/internal/model/flight"
 	requestparamsmodel "github.com/reynerpantou/bookcabin/internal/model/request-params"
 	"github.com/reynerpantou/bookcabin/internal/model/response"
 	"github.com/reynerpantou/bookcabin/internal/repository"
-	airasiarepository "github.com/reynerpantou/bookcabin/internal/repository/airasia"
-	batikairrepository "github.com/reynerpantou/bookcabin/internal/repository/batik-air"
-	garudaindonesiarepository "github.com/reynerpantou/bookcabin/internal/repository/garuda-indonesia"
-	lionairrepository "github.com/reynerpantou/bookcabin/internal/repository/lion-air"
+)
+
+var (
+	ErrInvalidRequest     = errors.New("invalid request")
+	ErrAllProvidersFailed = errors.New("all flight providers failed")
 )
 
 type UseCase interface {
 	FlightSearch(ctx context.Context, params *requestparamsmodel.RequestParams) (response.FlightSearchResponse, error)
 }
 
+type ProviderRepository interface {
+	Search(ctx context.Context, params *requestparamsmodel.RequestParams) ([]flight.Flight, error)
+}
+
+type provider struct {
+	name       aviation.Provider
+	repository ProviderRepository
+}
+
 type useCaseImpl struct {
-	airAsiaHTTP         airasiarepository.HTTP
-	batikAirHTTP        batikairrepository.HTTP
-	garudaIndonesiaHTTP garudaindonesiarepository.HTTP
-	lionAirHTTP         lionairrepository.HTTP
+	providers   []provider
+	loadTimeout time.Duration
 }
 
 func NewUseCase(ctx context.Context, repositories repository.Repositories) (UseCase, error) {
+	candidates := []provider{
+		{aviation.AirAsiaProvider, repositories.AirAsiaHTTP},
+		{aviation.BatikAirProvider, repositories.BatikAirHTTP},
+		{aviation.GarudaIndonesiaProvider, repositories.GarudaIndonesiaHTTP},
+		{aviation.LionAirProvider, repositories.LionAirHTTP},
+	}
+	providers := make([]provider, 0, len(candidates))
+	for _, candidate := range candidates {
+		if candidate.repository == nil {
+			continue
+		}
+		providers = append(providers, candidate)
+	}
+	if len(providers) == 0 {
+		return nil, errors.New("no flight providers available")
+	}
 	return &useCaseImpl{
-		airAsiaHTTP:         repositories.AirAsiaHTTP,
-		batikAirHTTP:        repositories.BatikAirHTTP,
-		garudaIndonesiaHTTP: repositories.GarudaIndonesiaHTTP,
-		lionAirHTTP:         repositories.LionAirHTTP,
+		providers:   providers,
+		loadTimeout: 2 * time.Second,
 	}, nil
 }
