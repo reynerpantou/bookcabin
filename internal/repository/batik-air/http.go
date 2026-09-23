@@ -161,8 +161,9 @@ func mapFlight(v batikairmodel.Flight) (flight.Flight, error) {
 		},
 		Stops: v.NumberOfStops,
 		Price: flight.Price{
-			Amount:   v.Fare.TotalPrice,
-			Currency: v.Fare.CurrencyCode,
+			Amount:    v.Fare.TotalPrice,
+			Currency:  v.Fare.CurrencyCode,
+			Formatted: helper.GetFormattedCurrency(v.Fare.CurrencyCode, v.Fare.TotalPrice),
 		},
 		AvailableSeats: v.SeatsAvailable,
 		CabinClass:     cabinClass,

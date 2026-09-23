@@ -35,8 +35,9 @@ type Duration struct {
 }
 
 type Price struct {
-	Amount   int64  `json:"amount"`
-	Currency string `json:"currency"`
+	Amount    int64  `json:"amount"`
+	Currency  string `json:"currency"`
+	Formatted string `json:"formatted"`
 }
 
 type Baggage struct {

@@ -156,8 +156,9 @@ func mapFlight(v lionairmodel.Flight) (flight.Flight, error) {
 		},
 		Stops: len(v.Layovers),
 		Price: flight.Price{
-			Amount:   v.Pricing.Total,
-			Currency: v.Pricing.Currency,
+			Amount:    v.Pricing.Total,
+			Currency:  v.Pricing.Currency,
+			Formatted: helper.GetFormattedCurrency(v.Pricing.Currency, v.Pricing.Total),
 		},
 		AvailableSeats: v.SeatsLeft,
 		CabinClass:     cabinClass,

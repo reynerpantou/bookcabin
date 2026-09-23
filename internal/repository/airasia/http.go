@@ -13,6 +13,7 @@ import (
 	"github.com/avast/retry-go/v5"
 	"github.com/reynerpantou/bookcabin/common/aviation"
 	"github.com/reynerpantou/bookcabin/common/config"
+	"github.com/reynerpantou/bookcabin/common/helper"
 	randomutil "github.com/reynerpantou/bookcabin/common/random"
 	timeutil "github.com/reynerpantou/bookcabin/common/time"
 	airasiamodel "github.com/reynerpantou/bookcabin/internal/model/airasia"
@@ -153,8 +154,9 @@ func mapFlight(v airasiamodel.Flight) (flight.Flight, error) {
 			Formatted:    timeutil.GetFormattedDuration(totalMinutes),
 		},
 		Price: flight.Price{
-			Amount:   v.PriceIDR,
-			Currency: "IDR",
+			Amount:    v.PriceIDR,
+			Currency:  "IDR",
+			Formatted: helper.GetFormattedCurrency("IDR", v.PriceIDR),
 		},
 		AvailableSeats: v.Seats,
 		CabinClass:     cabinClass,

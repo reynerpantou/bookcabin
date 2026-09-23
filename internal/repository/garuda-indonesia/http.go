@@ -164,8 +164,9 @@ func mapFlight(v garudaindonesiamodel.Flight) (flight.Flight, error) {
 		},
 		Stops: stops,
 		Price: flight.Price{
-			Amount:   v.Price.Amount,
-			Currency: v.Price.Currency,
+			Amount:    v.Price.Amount,
+			Currency:  v.Price.Currency,
+			Formatted: helper.GetFormattedCurrency(v.Price.Currency, v.Price.Amount),
 		},
 		AvailableSeats: v.AvailableSeats,
 		CabinClass:     cabinClass,
