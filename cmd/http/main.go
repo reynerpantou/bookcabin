@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	_ "time/tzdata"
 
 	"github.com/reynerpantou/bookcabin/common/config"
 	"github.com/reynerpantou/bookcabin/internal/delivery"

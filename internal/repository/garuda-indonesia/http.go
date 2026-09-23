@@ -108,7 +108,7 @@ func mapFlight(v garudaindonesiamodel.Flight) (flight.Flight, error) {
 		ID:       v.FlightID + "_" + aviation.GarudaIndonesiaProvider.String(),
 		Provider: aviation.GarudaIndonesiaProvider.String(),
 		Airline: flight.Airline{
-			Name: aviation.GarudaIndonesiaProvider.String(),
+			Name: v.Airline,
 			Code: v.AirlineCode,
 		},
 		FlightNumber: v.FlightID,
