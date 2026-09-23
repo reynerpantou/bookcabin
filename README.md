@@ -34,6 +34,37 @@ curl "localhost:8080/search/flight/v1?origin=CGK&destination=DPS&departureDate=2
 ] }
 ```
 
+## Requirements checklist
+
+**Core**
+- [x] Aggregate four providers (mocked, with per-provider latency and failure rate)
+- [x] Normalize different response formats into one model
+- [x] Search by origin, destination, and date
+- [x] Filter by price range, stops, departure/arrival time, airlines, duration
+- [x] Sort by price, duration, departure time, arrival time (asc/desc)
+- [x] Compare prices across providers for the same flight (de-duplicate, keep cheapest)
+- [x] Total trip duration including layovers
+- [x] Best value ranking (price + convenience)
+- [x] Handle different time formats and time zones
+- [x] Handle missing optional fields
+- [x] Validate flight data (e.g. arrival after departure)
+
+**Technical**
+- [x] Error handling (partial results, 400 / 503)
+- [x] Separation of concerns: providers, aggregation, filtering, caching
+- [x] Performance: parallel fan-out, caching, complexity documented
+- [x] README with setup, usage, and design choices
+
+**Bonus**
+- [x] Best value scoring (min-max normalized)
+- [x] Round-trip search
+- [x] Multi-city search
+- [x] Time zone conversions (WIB, WITA, WIT)
+- [x] Rate limiting per provider
+- [x] Retry with exponential backoff
+- [x] IDR formatting with thousands separator
+- [x] Parallel provider queries with timeout
+
 ## Design choices
 
 - **Clean architecture:** `delivery` (binding, validation, status codes) -> `usecase` (orchestration) -> `repository` (one adapter per provider, mapping each format to a unified `Flight`).
