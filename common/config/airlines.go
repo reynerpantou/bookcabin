@@ -1,5 +1,11 @@
 package config
 
+import (
+	"time"
+
+	yaml "gopkg.in/yaml.v3"
+)
+
 type AirlinesConfig struct {
 	AirAsia         AirlineConfig `yaml:"airasia"`
 	BatikAir        AirlineConfig `yaml:"batik_air"`
@@ -9,13 +15,29 @@ type AirlinesConfig struct {
 
 type AirlineConfig struct {
 	Enabled bool       `yaml:"enabled"`
-	Timeout string     `yaml:"timeout"`
+	Timeout Duration   `yaml:"timeout"`
 	Mock    MockConfig `yaml:"mock"`
 }
 
 type MockConfig struct {
 	FilePath    string   `yaml:"file_path"`
-	MinDelay    string   `yaml:"min_delay"`
-	MaxDelay    string   `yaml:"max_delay"`
+	MinDelay    Duration `yaml:"min_delay"`
+	MaxDelay    Duration `yaml:"max_delay"`
 	SuccessRate *float64 `yaml:"success_rate"`
+}
+
+type Duration time.Duration
+
+func (d *Duration) UnmarshalYAML(value *yaml.Node) error {
+	parsed, err := time.ParseDuration(value.Value)
+	if err != nil {
+		return err
+	}
+
+	*d = Duration(parsed)
+	return nil
+}
+
+func (d Duration) Duration() time.Duration {
+	return time.Duration(d)
 }
