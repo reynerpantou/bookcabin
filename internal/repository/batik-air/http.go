@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/reynerpantou/bookcabin/common/config"
+	randomutil "github.com/reynerpantou/bookcabin/common/random"
 	timeutil "github.com/reynerpantou/bookcabin/common/time"
 	batikairmodel "github.com/reynerpantou/bookcabin/internal/model/batik-air"
 	requestparamsmodel "github.com/reynerpantou/bookcabin/internal/model/request-params"
@@ -36,7 +37,7 @@ func NewHTTP(ctx context.Context, cfg config.AirlineConfig) (HTTP, error) {
 	}, nil
 }
 
-func (h httpImpl) Search(ctx context.Context, params *requestparamsmodel.RequestParams) (batikairmodel.SearchResponse, error) {
+func (h *httpImpl) Search(ctx context.Context, params *requestparamsmodel.RequestParams) (batikairmodel.SearchResponse, error) {
 	if params == nil {
 		return batikairmodel.SearchResponse{}, fmt.Errorf("params is nil")
 	}
@@ -48,6 +49,9 @@ func (h httpImpl) Search(ctx context.Context, params *requestparamsmodel.Request
 	err := timeutil.SetRandomDelay(ctx, h.cfg.Mock.MinDelay.Duration(), h.cfg.Mock.MaxDelay.Duration())
 	if err != nil {
 		return batikairmodel.SearchResponse{}, err
+	}
+	if !randomutil.IsSuccess(h.cfg.Mock.SuccessRate) {
+		return batikairmodel.SearchResponse{}, fmt.Errorf("failed to get batik air search response")
 	}
 	return h.mockSearchResponse, nil
 }

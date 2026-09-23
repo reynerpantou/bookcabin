@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/reynerpantou/bookcabin/common/config"
+	randomutil "github.com/reynerpantou/bookcabin/common/random"
 	timeutil "github.com/reynerpantou/bookcabin/common/time"
 	garudaindonesiamodel "github.com/reynerpantou/bookcabin/internal/model/garuda-indonesia"
 	requestparamsmodel "github.com/reynerpantou/bookcabin/internal/model/request-params"
@@ -48,6 +49,9 @@ func (h *httpImpl) Search(ctx context.Context, params *requestparamsmodel.Reques
 	err := timeutil.SetRandomDelay(ctx, h.cfg.Mock.MinDelay.Duration(), h.cfg.Mock.MaxDelay.Duration())
 	if err != nil {
 		return garudaindonesiamodel.SearchResponse{}, err
+	}
+	if !randomutil.IsSuccess(h.cfg.Mock.SuccessRate) {
+		return garudaindonesiamodel.SearchResponse{}, fmt.Errorf("failed to get garuda indonesia search response")
 	}
 	return h.mockSearchResponse, nil
 }
