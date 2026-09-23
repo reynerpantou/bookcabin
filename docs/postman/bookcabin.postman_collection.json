@@ -1,8 +1,8 @@
 {
   "info": {
-    "_postman_id": "4653783f-a4d6-4b5e-9137-bf57b53d8555",
+    "_postman_id": "182eb915-2641-4421-9d80-5116226de262",
     "name": "BookCabin Flight Search",
-    "description": "All request variants for /search/flight/v1 and /multi-search/flight/v1 against the provided mocks (CGK → DPS, 2025-12-15) plus the extra mocks in files/mock/extra (DPS → CGK on 20 Dec, DPS → SUB on 18 Dec, SUB → CGK on 20 Dec). Each request has tests for its expected status and behaviour. Set `baseUrl` (default http://localhost:8080) and run the collection with the server started via `make run`.",
+    "description": "All request variants for /search/flight/v1 and /multi-search/flight/v1 against the provided mocks (CGK → DPS, 2025-12-15) plus the flights added to the same mock files for multi-search (DPS → CGK on 20 Dec, DPS → SUB on 18 Dec, SUB → CGK on 20 Dec). Each request has tests for its expected status and behaviour. Set `baseUrl` (default http://localhost:8080) and run the collection with the server started via `make run`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -3091,7 +3091,7 @@
                 "v1"
               ]
             },
-            "description": "Round-trip = two legs, the second reversing the route. Return flights (DPS→CGK on 20 Dec) come from files/mock/extra.",
+            "description": "Round-trip = two legs, the second reversing the route. Return flights (DPS→CGK on 20 Dec) were added to the mock files for multi-search.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"legs\": [\n    {\n      \"origin\": \"CGK\",\n      \"destination\": \"DPS\",\n      \"departureDate\": \"2025-12-15\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    },\n    {\n      \"origin\": \"DPS\",\n      \"destination\": \"CGK\",\n      \"departureDate\": \"2025-12-20\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    }\n  ]\n}",
@@ -3186,7 +3186,7 @@
                 "v1"
               ]
             },
-            "description": "DPS→SUB (18 Dec) and SUB→CGK (20 Dec) come from files/mock/extra.",
+            "description": "DPS→SUB (18 Dec) and SUB→CGK (20 Dec) were added to the mock files for multi-search.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"legs\": [\n    {\n      \"origin\": \"CGK\",\n      \"destination\": \"DPS\",\n      \"departureDate\": \"2025-12-15\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    },\n    {\n      \"origin\": \"DPS\",\n      \"destination\": \"SUB\",\n      \"departureDate\": \"2025-12-18\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    },\n    {\n      \"origin\": \"SUB\",\n      \"destination\": \"CGK\",\n      \"departureDate\": \"2025-12-20\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    }\n  ]\n}",
