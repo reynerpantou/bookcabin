@@ -98,7 +98,7 @@ func mapFlight(v airasiamodel.Flight) (flight.Flight, error) {
 		ID:       v.FlightCode + "_" + aviation.AirAsiaProvider.String(),
 		Provider: aviation.AirAsiaProvider.String(),
 		Airline: flight.Airline{
-			Name: aviation.AirAsiaProvider.String(),
+			Name: v.Airline,
 			Code: aviation.GetAirlineIATACodeFromFlightCode(v.FlightCode),
 		},
 		FlightNumber: v.FlightCode,

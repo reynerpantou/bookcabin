@@ -50,6 +50,7 @@ func (h *HTTP) FlightSearch(c *gin.Context) {
 		})
 		return
 	}
+	params.Normalize()
 	result, err := h.flightSearchUseCase.FlightSearch(
 		c.Request.Context(),
 		params,

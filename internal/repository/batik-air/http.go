@@ -105,8 +105,8 @@ func mapFlight(v batikairmodel.Flight) (flight.Flight, error) {
 		ID:       v.FlightNumber + "_" + aviation.BatikAirProvider.String(),
 		Provider: aviation.BatikAirProvider.String(),
 		Airline: flight.Airline{
-			Name: aviation.BatikAirProvider.String(),
-			Code: aviation.GetAirlineIATACodeFromFlightCode(v.FlightNumber),
+			Name: v.AirlineName,
+			Code: v.AirlineIATA,
 		},
 		FlightNumber: v.FlightNumber,
 		Departure: flight.Airport{
