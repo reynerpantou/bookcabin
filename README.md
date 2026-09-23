@@ -58,3 +58,7 @@ Provided mocks only cover CGK->DPS on 2025-12-15; a few flights were appended (D
 | `expected_result.json` timestamp is for 2024 | Computed from parsed times |
 
 Assumptions: GA315->GA332 is one CGK->DPS product; Garuda baggage numbers are pieces; Batik class `Y` is economy.
+
+## Complexity
+
+O(n) for normalization, matching, de-duplication, filtering, and scoring; O(n log n) sort; O(1) cache lookup.
