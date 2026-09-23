@@ -9,9 +9,10 @@ import (
 )
 
 type Config struct {
-	App      AppConfig      `yaml:"app"`
-	Server   ServerConfig   `yaml:"server"`
-	Airlines AirlinesConfig `yaml:"airlines"`
+	App          AppConfig          `yaml:"app"`
+	Server       ServerConfig       `yaml:"server"`
+	Airlines     AirlinesConfig     `yaml:"airlines"`
+	FlightSearch FlightSearchConfig `yaml:"flight_search"`
 }
 
 func Load() (*Config, error) {

@@ -7,6 +7,11 @@ server:
   read_timeout: 5s
   write_timeout: 10s
 
+flight_search:
+  load_timeout: 2s
+  cache_ttl: 1m
+  cache_cleanup_interval: 5m
+
 airlines:
   airasia:
     enabled: true

@@ -20,7 +20,7 @@ func (u *useCaseImpl) FlightSearch(ctx context.Context, params *requestparamsmod
 		return response.FlightSearchResponse{}, err
 	}
 	flights := u.applyFilter(loadResp.Flights, params)
-	// TODO: create rank based on best value (price & convenience)
+	u.applySort(flights, params.SortBy, params.SortOrder)
 	return buildResponse(params, loadResp, flights, time.Since(start)), nil
 }
 

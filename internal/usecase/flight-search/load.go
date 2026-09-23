@@ -21,8 +21,11 @@ type loadResponse struct {
 }
 
 func (u *useCaseImpl) load(ctx context.Context, params *requestparamsmodel.RequestParams) (loadResponse, error) {
-	// TODO: get cache here
-
+	key := getCacheKey(params)
+	if cached, found := u.cache.get(key); found {
+		cached.CacheHit = true
+		return cached, nil
+	}
 	res := u.fetchAll(ctx, params)
 	if res.ProvidersSucceeded == 0 {
 		return loadResponse{}, ErrAllProvidersFailed
@@ -30,7 +33,7 @@ func (u *useCaseImpl) load(ctx context.Context, params *requestparamsmodel.Reque
 	res.Flights = u.applySearch(res.Flights, params)
 	res.Flights = u.deduplicateCheapest(res.Flights)
 	if res.ProvidersFailed == 0 {
-		// TODO: set cache here
+		u.cache.set(key, res)
 	}
 	return res, nil
 }

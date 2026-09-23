@@ -1,6 +1,7 @@
 package requestparamsmodel
 
 import (
+	"errors"
 	"strings"
 	"time"
 )
@@ -13,6 +14,7 @@ type RequestParams struct {
 	Passengers    int     `form:"passengers" json:"passengers" binding:"required,min=1"`
 	CabinClass    string  `form:"cabinClass" json:"cabinClass" binding:"required"`
 	Filters
+	Sort
 }
 
 type Filters struct {
@@ -26,6 +28,22 @@ type Filters struct {
 	ArrivalFrom        string   `form:"arrivalFrom" json:"arrivalFrom" binding:"omitempty,datetime=15:04"`
 	ArrivalTo          string   `form:"arrivalTo" json:"arrivalTo" binding:"omitempty,datetime=15:04"`
 }
+
+type Sort struct {
+	SortBy    string `form:"sortBy" json:"sortBy" binding:"omitempty,oneof=best_value price duration departure_time arrival_time"`
+	SortOrder string `form:"sortOrder" json:"sortOrder" binding:"omitempty,oneof=asc desc"`
+}
+
+const (
+	SortByBestValue     = "best_value"
+	SortByPrice         = "price"
+	SortByDuration      = "duration"
+	SortByDepartureTime = "departure_time"
+	SortByArrivalTime   = "arrival_time"
+
+	SortOrderAsc  = "asc"
+	SortOrderDesc = "desc"
+)
 
 func (r *RequestParams) Normalize() {
 	r.Origin = strings.ToUpper(strings.TrimSpace(r.Origin))
@@ -42,6 +60,12 @@ func (r *RequestParams) Normalize() {
 	r.ArrivalFrom = normalizeClock(r.ArrivalFrom)
 	r.ArrivalTo = normalizeClock(r.ArrivalTo)
 	r.Airlines = airlines
+	if r.SortBy == "" {
+		r.SortBy = SortByBestValue
+	}
+	if r.SortOrder == "" {
+		r.SortOrder = SortOrderAsc
+	}
 }
 
 func normalizeClock(s string) string {
@@ -50,4 +74,21 @@ func normalizeClock(s string) string {
 		return s
 	}
 	return t.Format("15:04")
+}
+
+func (r *RequestParams) Validate() error {
+	if r.Origin == r.Destination {
+		return errors.New("origin and destination must differ")
+	}
+	f := r.Filters
+	if f.MinPrice != nil && f.MaxPrice != nil && *f.MinPrice > *f.MaxPrice {
+		return errors.New("minPrice must not exceed maxPrice")
+	}
+	if f.DepartureFrom != "" && f.DepartureTo != "" && f.DepartureFrom > f.DepartureTo {
+		return errors.New("departureFrom must not be after departureTo")
+	}
+	if f.ArrivalFrom != "" && f.ArrivalTo != "" && f.ArrivalFrom > f.ArrivalTo {
+		return errors.New("arrivalFrom must not be after arrivalTo")
+	}
+	return nil
 }
