@@ -14,9 +14,21 @@ type AirlinesConfig struct {
 }
 
 type AirlineConfig struct {
-	Enabled bool       `yaml:"enabled"`
-	Timeout Duration   `yaml:"timeout"`
-	Mock    MockConfig `yaml:"mock"`
+	Enabled   bool            `yaml:"enabled"`
+	Timeout   Duration        `yaml:"timeout"`
+	Mock      MockConfig      `yaml:"mock"`
+	RateLimit RateLimitConfig `yaml:"rate_limit"`
+	Retry     RetryConfig     `yaml:"retry"`
+}
+
+type RateLimitConfig struct {
+	RequestsPerSecond float64 `yaml:"requests_per_second"`
+	Burst             int     `yaml:"burst"`
+}
+
+type RetryConfig struct {
+	MaxAttempts int      `yaml:"max_attempts"`
+	BaseDelay   Duration `yaml:"base_delay"`
 }
 
 type MockConfig struct {
