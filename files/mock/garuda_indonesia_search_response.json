@@ -128,6 +128,108 @@
         "carry_on": 1,
         "checked": 2
       }
+    },
+    {
+      "flight_id": "GA401",
+      "airline": "Garuda Indonesia",
+      "airline_code": "GA",
+      "departure": {
+        "airport": "DPS",
+        "city": "Denpasar",
+        "time": "2025-12-20T15:00:00+08:00",
+        "terminal": "I"
+      },
+      "arrival": {
+        "airport": "CGK",
+        "city": "Jakarta",
+        "time": "2025-12-20T15:50:00+07:00",
+        "terminal": "3"
+      },
+      "duration_minutes": 110,
+      "stops": 0,
+      "aircraft": "Boeing 737-800",
+      "price": {
+        "amount": 1300000,
+        "currency": "IDR"
+      },
+      "available_seats": 20,
+      "fare_class": "economy",
+      "baggage": {
+        "carry_on": 1,
+        "checked": 2
+      },
+      "amenities": [
+        "wifi",
+        "meal",
+        "entertainment"
+      ]
+    },
+    {
+      "flight_id": "GA343",
+      "airline": "Garuda Indonesia",
+      "airline_code": "GA",
+      "departure": {
+        "airport": "DPS",
+        "city": "Denpasar",
+        "time": "2025-12-18T14:00:00+08:00",
+        "terminal": "D"
+      },
+      "arrival": {
+        "airport": "SUB",
+        "city": "Surabaya",
+        "time": "2025-12-18T14:00:00+07:00",
+        "terminal": "2"
+      },
+      "duration_minutes": 60,
+      "stops": 0,
+      "aircraft": "Boeing 737-800",
+      "price": {
+        "amount": 950000,
+        "currency": "IDR"
+      },
+      "available_seats": 18,
+      "fare_class": "economy",
+      "baggage": {
+        "carry_on": 1,
+        "checked": 2
+      },
+      "amenities": [
+        "meal"
+      ]
+    },
+    {
+      "flight_id": "GA311",
+      "airline": "Garuda Indonesia",
+      "airline_code": "GA",
+      "departure": {
+        "airport": "SUB",
+        "city": "Surabaya",
+        "time": "2025-12-20T12:00:00+07:00",
+        "terminal": "2"
+      },
+      "arrival": {
+        "airport": "CGK",
+        "city": "Jakarta",
+        "time": "2025-12-20T13:30:00+07:00",
+        "terminal": "3"
+      },
+      "duration_minutes": 90,
+      "stops": 0,
+      "aircraft": "Boeing 737-800",
+      "price": {
+        "amount": 1150000,
+        "currency": "IDR"
+      },
+      "available_seats": 24,
+      "fare_class": "economy",
+      "baggage": {
+        "carry_on": 1,
+        "checked": 2
+      },
+      "amenities": [
+        "wifi",
+        "meal"
+      ]
     }
   ]
 }

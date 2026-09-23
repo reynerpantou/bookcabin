@@ -136,7 +136,6 @@ func mapFlight(v garudaindonesiamodel.Flight) (flight.Flight, error) {
 	if err != nil {
 		return flight.Flight{}, err
 	}
-	// dari timestamp: termasuk layover, mengabaikan duration_minutes yang tidak konsisten
 	totalMinutes := int(arr.Sub(dep).Minutes())
 	currentFlight := flight.Flight{
 		ID:       v.FlightID + "_" + aviation.GarudaIndonesiaProvider.String(),
