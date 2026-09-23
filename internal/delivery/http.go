@@ -53,6 +53,10 @@ func (h *HTTP) FlightSearch(c *gin.Context) {
 		return
 	}
 	params.Normalize()
+	if err := params.Validate(); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 	result, err := h.flightSearchUseCase.FlightSearch(
 		c.Request.Context(),
 		&params,
