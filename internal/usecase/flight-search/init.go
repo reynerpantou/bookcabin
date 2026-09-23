@@ -13,7 +13,7 @@ import (
 )
 
 type UseCase interface {
-	FlightSearch(ctx context.Context, params requestparamsmodel.RequestParams) (response.FlightSearchResponse, error)
+	FlightSearch(ctx context.Context, params *requestparamsmodel.RequestParams) (response.FlightSearchResponse, error)
 }
 
 type useCaseImpl struct {

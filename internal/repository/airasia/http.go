@@ -69,7 +69,7 @@ func mapToUnifiedFlights(searchResponse airasiamodel.SearchResponse) ([]flight.F
 	for _, v := range searchResponse.Flights {
 		f, err := mapFlight(v)
 		if err != nil {
-			slog.Warn("airasia: skip invalid flight", "flight_number", v.FlightCode, "error", err)
+			slog.Warn("airasia: skip invalid flight", "flight_code", v.FlightCode, "error", err)
 			continue
 		}
 		flights = append(flights, f)

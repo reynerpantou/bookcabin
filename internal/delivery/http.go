@@ -31,7 +31,7 @@ func (h *HTTP) Router() *gin.Engine {
 }
 
 func (h *HTTP) FlightSearch(c *gin.Context) {
-	var params requestparamsmodel.RequestParams
+	var params *requestparamsmodel.RequestParams
 	var err error
 
 	// prepare parameters
