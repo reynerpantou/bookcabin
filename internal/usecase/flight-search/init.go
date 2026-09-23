@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/reynerpantou/bookcabin/common/aviation"
+	"github.com/reynerpantou/bookcabin/common/config"
 	"github.com/reynerpantou/bookcabin/internal/model/flight"
 	requestparamsmodel "github.com/reynerpantou/bookcabin/internal/model/request-params"
 	"github.com/reynerpantou/bookcabin/internal/model/response"
@@ -33,9 +34,10 @@ type provider struct {
 type useCaseImpl struct {
 	providers   []provider
 	loadTimeout time.Duration
+	cache       *cacheImpl
 }
 
-func NewUseCase(ctx context.Context, repositories repository.Repositories) (UseCase, error) {
+func NewUseCase(ctx context.Context, cfg *config.Config, repositories repository.Repositories) (UseCase, error) {
 	candidates := []provider{
 		{aviation.AirAsiaProvider, repositories.AirAsiaHTTP},
 		{aviation.BatikAirProvider, repositories.BatikAirHTTP},
@@ -52,8 +54,14 @@ func NewUseCase(ctx context.Context, repositories repository.Repositories) (UseC
 	if len(providers) == 0 {
 		return nil, errors.New("no flight providers available")
 	}
+	cache := newLocalCache(
+		ctx,
+		cfg.FlightSearch.CacheTTL.Duration(),
+		cfg.FlightSearch.CacheCleanupInterval.Duration(),
+	)
 	return &useCaseImpl{
 		providers:   providers,
 		loadTimeout: 2 * time.Second,
+		cache:       cache,
 	}, nil
 }

@@ -19,7 +19,7 @@ func NewUseCases(ctx context.Context, cfg *config.Config, repositories repositor
 	useCases := UseCases{}
 	swg := safewaitgroup.NewSafeWaitGroup()
 	swg.Go("initalize_usecase_flight_search", func() {
-		flightSearchUseCase, err := flightsearchusecase.NewUseCase(ctx, repositories)
+		flightSearchUseCase, err := flightsearchusecase.NewUseCase(ctx, cfg, repositories)
 		if err != nil {
 			slog.ErrorContext(
 				ctx,
