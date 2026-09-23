@@ -1,0 +1,3920 @@
+{
+  "info": {
+    "_postman_id": "4653783f-a4d6-4b5e-9137-bf57b53d8555",
+    "name": "BookCabin Flight Search",
+    "description": "All request variants for /search/flight/v1 and /multi-search/flight/v1 against the provided mocks (CGK → DPS, 2025-12-15) plus the extra mocks in files/mock/extra (DPS → CGK on 20 Dec, DPS → SUB on 18 Dec, SUB → CGK on 20 Dec). Each request has tests for its expected status and behaviour. Set `baseUrl` (default http://localhost:8080) and run the collection with the server started via `make run`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "description": "",
+      "item": [
+        {
+          "name": "Health check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"status ok\", () => pm.expect(body.status).to.eql(\"ok\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "Search / Basic",
+      "description": "",
+      "item": [
+        {
+          "name": "One-way CGK → DPS (all 13 flights)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"13 flights from 4 providers\", () => { pm.expect(body.metadata.providers_succeeded).to.eql(4); pm.expect(body.metadata.total_results).to.eql(13); });",
+                  "pm.test(\"default sort best_value: QZ532 first\", () => pm.expect(body.flights[0].flight_number).to.eql(\"QZ532\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                }
+              ]
+            },
+            "description": "Full mock result. With retry, AirAsia's 10% simulated failure is almost always recovered; if not, metadata.providers_failed = 1 and only 9 flights return."
+          }
+        },
+        {
+          "name": "Same search again (cache hit)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"served from cache\", () => pm.expect(body.metadata.cache_hit).to.be.true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                }
+              ]
+            },
+            "description": "Run right after the previous request (cache TTL 1 minute)."
+          }
+        },
+        {
+          "name": "Normalization (lowercase codes, mixed-case cabin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"normalized criteria\", () => { pm.expect(body.search_criteria.origin).to.eql(\"CGK\"); pm.expect(body.search_criteria.cabin_class).to.eql(\"economy\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=cgk&destination=dps&departureDate=2025-12-15&passengers=1&cabinClass=Economy",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "cgk"
+                },
+                {
+                  "key": "destination",
+                  "value": "dps"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "Economy"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Empty params are ignored (maxPrice=, maxStops=, airlines=, sortBy=)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"not filtered to direct-only\", () => pm.expect(body.flights.some(f => f.stops > 0)).to.be.true);",
+                  "pm.test(\"not filtered by price 0\", () => pm.expect(body.metadata.total_results).to.be.above(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&maxPrice=&maxStops=&airlines=&sortBy=&sortOrder=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "maxPrice",
+                  "value": ""
+                },
+                {
+                  "key": "maxStops",
+                  "value": ""
+                },
+                {
+                  "key": "airlines",
+                  "value": ""
+                },
+                {
+                  "key": "sortBy",
+                  "value": ""
+                },
+                {
+                  "key": "sortOrder",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Empty query values are dropped before binding, so they behave as not provided (maxStops= would otherwise become 0 = direct only)."
+          }
+        },
+        {
+          "name": "Local departure date: 2025-12-14 returns nothing",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"no flights on 14 Dec\", () => pm.expect(body.metadata.total_results).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-14&passengers=1&cabinClass=economy",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-14"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                }
+              ]
+            },
+            "description": "QZ520 departs 04:45 WIB on 15 Dec (21:45 UTC on 14 Dec); dates are matched in the departure airport's local time."
+          }
+        },
+        {
+          "name": "Route without data: CGK → SUB",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"no CGK→SUB product\", () => pm.expect(body.metadata.total_results).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=SUB&departureDate=2025-12-15&passengers=1&cabinClass=economy",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "SUB"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                }
+              ]
+            },
+            "description": "GA315 (CGK→SUB→DPS) is one CGK→DPS itinerary; its first segment is not sold as CGK→SUB."
+          }
+        },
+        {
+          "name": "Cabin without data: business",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"mocks only contain economy\", () => pm.expect(body.metadata.total_results).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=business",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "business"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "POST: request from the PDF",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"flights returned\", () => pm.expect(body.metadata.total_results).to.be.above(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"origin\": \"CGK\",\n  \"destination\": \"DPS\",\n  \"departureDate\": \"2025-12-15\",\n  \"returnDate\": null,\n  \"passengers\": 1,\n  \"cabinClass\": \"economy\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Search / Filters",
+      "description": "",
+      "item": [
+        {
+          "name": "maxStops=0 (direct only)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"all direct\", () => body.flights.forEach(f => pm.expect(f.stops === 0, f.flight_number).to.be.true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&maxStops=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "maxStops",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "maxStops=1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"at most 1 stop\", () => body.flights.forEach(f => pm.expect(f.stops <= 1, f.flight_number).to.be.true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&maxStops=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "maxStops",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "maxPrice=800000",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"price ≤ 800,000\", () => body.flights.forEach(f => pm.expect(f.price.amount <= 800000, f.flight_number).to.be.true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&maxPrice=800000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "maxPrice",
+                  "value": "800000"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "minPrice=1000000 & maxPrice=1500000",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"price in range\", () => body.flights.forEach(f => pm.expect(f.price.amount >= 1000000 && f.price.amount <= 1500000, f.flight_number).to.be.true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&minPrice=1000000&maxPrice=1500000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "minPrice",
+                  "value": "1000000"
+                },
+                {
+                  "key": "maxPrice",
+                  "value": "1500000"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "maxDuration=120 (minutes, incl. layovers)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"duration ≤ 120 min\", () => body.flights.forEach(f => pm.expect(f.duration.total_minutes <= 120, f.flight_number).to.be.true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&maxDuration=120",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "maxDuration",
+                  "value": "120"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "airlines=GA,JT (comma-separated)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"only GA and JT\", () => body.flights.forEach(f => pm.expect([\"GA\",\"JT\"].includes(f.airline.code), f.flight_number).to.be.true));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"6 flights\", () => pm.expect(body.metadata.total_results).to.eql(6));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&airlines=GA,JT",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "airlines",
+                  "value": "GA,JT"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "airlines=GA&airlines=JT (repeated)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"only GA and JT\", () => body.flights.forEach(f => pm.expect([\"GA\",\"JT\"].includes(f.airline.code), f.flight_number).to.be.true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&airlines=GA&airlines=JT",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "airlines",
+                  "value": "GA"
+                },
+                {
+                  "key": "airlines",
+                  "value": "JT"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "airlines=qz (lowercase)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"only QZ\", () => body.flights.forEach(f => pm.expect(f.airline.code === \"QZ\", f.flight_number).to.be.true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&airlines=qz",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "airlines",
+                  "value": "qz"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "departureFrom=05:00 & departureTo=12:00 (local WIB)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"departs 05:00–12:00 local\", () => body.flights.forEach(f => pm.expect(f.departure.datetime.substring(11, 16) >= \"05:00\" && f.departure.datetime.substring(11, 16) <= \"12:00\", f.flight_number).to.be.true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&departureFrom=05:00&departureTo=12:00",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "departureFrom",
+                  "value": "05:00"
+                },
+                {
+                  "key": "departureTo",
+                  "value": "12:00"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "departureFrom=5:00 (single-digit hour)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"departs 05:00–09:00 local\", () => body.flights.forEach(f => pm.expect(f.departure.datetime.substring(11, 16) >= \"05:00\" && f.departure.datetime.substring(11, 16) <= \"09:00\", f.flight_number).to.be.true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&departureFrom=5:00&departureTo=9:00",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "departureFrom",
+                  "value": "5:00"
+                },
+                {
+                  "key": "departureTo",
+                  "value": "9:00"
+                }
+              ]
+            },
+            "description": "Single-digit hours are normalized to HH:MM before comparison."
+          }
+        },
+        {
+          "name": "arrivalTo=10:00 (local WITA)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"arrives by 10:00 local\", () => body.flights.forEach(f => pm.expect(f.arrival.datetime.substring(11, 16) <= \"10:00\", f.flight_number).to.be.true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&arrivalTo=10:00",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "arrivalTo",
+                  "value": "10:00"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "arrivalFrom=18:00 (local WITA)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"arrives from 18:00 local\", () => body.flights.forEach(f => pm.expect(f.arrival.datetime.substring(11, 16) >= \"18:00\", f.flight_number).to.be.true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&arrivalFrom=18:00",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "arrivalFrom",
+                  "value": "18:00"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "passengers=30 (enough seats only)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"≥ 30 seats available\", () => body.flights.forEach(f => pm.expect(f.available_seats >= 30, f.flight_number).to.be.true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=30&cabinClass=economy",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "30"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Combined: direct QZ by price",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"QZ532, QZ520, QZ524\", () => pm.expect(body.flights.map(f => f.flight_number)).to.eql([\"QZ532\",\"QZ520\",\"QZ524\"]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&maxStops=0&airlines=QZ&sortBy=price",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "maxStops",
+                  "value": "0"
+                },
+                {
+                  "key": "airlines",
+                  "value": "QZ"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "price"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "POST: filters in JSON body",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"all filters applied\", () => body.flights.forEach(f => pm.expect(f.stops === 0 && f.price.amount <= 1000000 && [\"QZ\",\"JT\"].includes(f.airline.code), f.flight_number).to.be.true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"origin\": \"CGK\",\n  \"destination\": \"DPS\",\n  \"departureDate\": \"2025-12-15\",\n  \"returnDate\": null,\n  \"passengers\": 1,\n  \"cabinClass\": \"economy\",\n  \"maxStops\": 0,\n  \"maxPrice\": 1000000,\n  \"airlines\": [\n    \"QZ\",\n    \"JT\"\n  ],\n  \"departureFrom\": \"05:00\",\n  \"sortBy\": \"price\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Search / Sorting",
+      "description": "",
+      "item": [
+        {
+          "name": "sortBy=best_value (default)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"cheap direct flights first, transits last\", () => { const first = body.flights[0], last = body.flights[body.flights.length-1]; pm.expect(first.stops).to.eql(0); pm.expect(last.stops).to.eql(1); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&sortBy=best_value",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "best_value"
+                }
+              ]
+            },
+            "description": "cost = 0.5·price + 0.3·duration + 0.2·stops, each min-max normalized over the filtered set; lower is better."
+          }
+        },
+        {
+          "name": "sortBy=best_value & sortOrder=desc",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"worst value first\", () => pm.expect(body.flights[0].flight_number).to.eql(\"GA315\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&sortBy=best_value&sortOrder=desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "best_value"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "desc"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "sortBy=price & sortOrder=asc",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const v = body.flights.map(f => f.price.amount);",
+                  "pm.test(\"sorted ascending\", () => { for (let i = 1; i < v.length; i++) pm.expect(v[i-1] <= v[i]).to.be.true; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&sortBy=price&sortOrder=asc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "price"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "asc"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "sortBy=price & sortOrder=desc",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const v = body.flights.map(f => f.price.amount);",
+                  "pm.test(\"sorted descending\", () => { for (let i = 1; i < v.length; i++) pm.expect(v[i-1] >= v[i]).to.be.true; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&sortBy=price&sortOrder=desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "price"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "desc"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "sortBy=duration & sortOrder=asc",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const v = body.flights.map(f => f.duration.total_minutes);",
+                  "pm.test(\"sorted ascending\", () => { for (let i = 1; i < v.length; i++) pm.expect(v[i-1] <= v[i]).to.be.true; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&sortBy=duration&sortOrder=asc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "duration"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "asc"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "sortBy=duration & sortOrder=desc",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const v = body.flights.map(f => f.duration.total_minutes);",
+                  "pm.test(\"sorted descending\", () => { for (let i = 1; i < v.length; i++) pm.expect(v[i-1] >= v[i]).to.be.true; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&sortBy=duration&sortOrder=desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "duration"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "desc"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "sortBy=departure_time & sortOrder=asc",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const v = body.flights.map(f => f.departure.timestamp);",
+                  "pm.test(\"sorted ascending\", () => { for (let i = 1; i < v.length; i++) pm.expect(v[i-1] <= v[i]).to.be.true; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&sortBy=departure_time&sortOrder=asc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "departure_time"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "asc"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "sortBy=departure_time & sortOrder=desc",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const v = body.flights.map(f => f.departure.timestamp);",
+                  "pm.test(\"sorted descending\", () => { for (let i = 1; i < v.length; i++) pm.expect(v[i-1] >= v[i]).to.be.true; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&sortBy=departure_time&sortOrder=desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "departure_time"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "desc"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "sortBy=arrival_time & sortOrder=asc",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const v = body.flights.map(f => f.arrival.timestamp);",
+                  "pm.test(\"sorted ascending\", () => { for (let i = 1; i < v.length; i++) pm.expect(v[i-1] <= v[i]).to.be.true; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&sortBy=arrival_time&sortOrder=asc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "arrival_time"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "asc"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "sortBy=arrival_time & sortOrder=desc",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const v = body.flights.map(f => f.arrival.timestamp);",
+                  "pm.test(\"sorted descending\", () => { for (let i = 1; i < v.length; i++) pm.expect(v[i-1] >= v[i]).to.be.true; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&sortBy=arrival_time&sortOrder=desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "arrival_time"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "desc"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Tie-break: equal price keeps earlier departure first",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const n = body.flights.map(f => f.flight_number);",
+                  "pm.test(\"JT740 (05:30) before ID7042 (18:45), both 950,000\", () => pm.expect(n.indexOf(\"JT740\")).to.be.below(n.indexOf(\"ID7042\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&sortBy=price&airlines=JT,ID",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "price"
+                },
+                {
+                  "key": "airlines",
+                  "value": "JT,ID"
+                }
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "Search / Validation (400)",
+      "description": "",
+      "item": [
+        {
+          "name": "Missing origin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "origin not 3 letters (CG)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CG&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CG"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "origin equals destination",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=CGK&departureDate=2025-12-15&passengers=1&cabinClass=economy",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "CGK"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "departureDate wrong format (15-12-2025)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=15-12-2025&passengers=1&cabinClass=economy",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "15-12-2025"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "passengers=0",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=0&cabinClass=economy",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "0"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Missing cabinClass",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "minPrice > maxPrice",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&minPrice=900000&maxPrice=500000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "minPrice",
+                  "value": "900000"
+                },
+                {
+                  "key": "maxPrice",
+                  "value": "500000"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "maxPrice negative",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&maxPrice=-1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "maxPrice",
+                  "value": "-1"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "maxStops negative",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&maxStops=-1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "maxStops",
+                  "value": "-1"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "maxDuration=0",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&maxDuration=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "maxDuration",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "maxPrice not a number",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&maxPrice=abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "maxPrice",
+                  "value": "abc"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "departureFrom after departureTo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&departureFrom=12:00&departureTo=05:00",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "departureFrom",
+                  "value": "12:00"
+                },
+                {
+                  "key": "departureTo",
+                  "value": "05:00"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "arrivalFrom after arrivalTo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&arrivalFrom=12:00&arrivalTo=05:00",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "arrivalFrom",
+                  "value": "12:00"
+                },
+                {
+                  "key": "arrivalTo",
+                  "value": "05:00"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "departureFrom invalid time (25:00)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&departureFrom=25:00",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "departureFrom",
+                  "value": "25:00"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "sortBy unknown (cheapest)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&sortBy=cheapest",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "cheapest"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "sortOrder unknown (up)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1?origin=CGK&destination=DPS&departureDate=2025-12-15&passengers=1&cabinClass=economy&sortOrder=up",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                },
+                {
+                  "key": "destination",
+                  "value": "DPS"
+                },
+                {
+                  "key": "departureDate",
+                  "value": "2025-12-15"
+                },
+                {
+                  "key": "passengers",
+                  "value": "1"
+                },
+                {
+                  "key": "cabinClass",
+                  "value": "economy"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "up"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "POST: malformed JSON",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"origin\": \"CGK\", ",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST: missing required fields",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/search/flight/v1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search",
+                "flight",
+                "v1"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"origin\": \"CGK\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Multi-search / Round-trip & multi-city",
+      "description": "",
+      "item": [
+        {
+          "name": "Round-trip CGK ⇄ DPS",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"2 legs in request order\", () => pm.expect(body.legs.length).to.eql(2));",
+                  "pm.test(\"outbound has flights\", () => pm.expect(body.legs[0].metadata.total_results).to.be.above(0));",
+                  "pm.test(\"return leg reverses the route\", () => { const c = body.legs[1].search_criteria; pm.expect(c.origin).to.eql(\"DPS\"); pm.expect(c.destination).to.eql(\"CGK\"); });",
+                  "pm.test(\"return leg: 5 DPS→CGK flights from the extra mocks\", () => pm.expect(body.legs[1].metadata.total_results).to.eql(5));",
+                  "pm.test(\"return flights depart DPS and arrive CGK\", () => body.legs[1].flights.forEach(f => { pm.expect(f.departure.airport).to.eql(\"DPS\"); pm.expect(f.arrival.airport).to.eql(\"CGK\"); }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/multi-search/flight/v1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "multi-search",
+                "flight",
+                "v1"
+              ]
+            },
+            "description": "Round-trip = two legs, the second reversing the route. Return flights (DPS→CGK on 20 Dec) come from files/mock/extra.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"legs\": [\n    {\n      \"origin\": \"CGK\",\n      \"destination\": \"DPS\",\n      \"departureDate\": \"2025-12-15\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    },\n    {\n      \"origin\": \"DPS\",\n      \"destination\": \"CGK\",\n      \"departureDate\": \"2025-12-20\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Round-trip again (cache hit per leg)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"outbound leg served from cache\", () => pm.expect(body.legs[0].metadata.cache_hit).to.be.true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/multi-search/flight/v1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "multi-search",
+                "flight",
+                "v1"
+              ]
+            },
+            "description": "Run right after the previous request.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"legs\": [\n    {\n      \"origin\": \"CGK\",\n      \"destination\": \"DPS\",\n      \"departureDate\": \"2025-12-15\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    },\n    {\n      \"origin\": \"DPS\",\n      \"destination\": \"CGK\",\n      \"departureDate\": \"2025-12-20\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Multi-city CGK → DPS → SUB → CGK",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"3 legs in request order\", () => pm.expect(body.legs.length).to.eql(3));",
+                  "pm.test(\"legs keep request order\", () => pm.expect(body.legs.map(l => l.search_criteria.destination)).to.eql([\"DPS\",\"SUB\",\"CGK\"]));",
+                  "pm.test(\"flights per leg: 13, 3, 3\", () => pm.expect(body.legs.map(l => l.metadata.total_results)).to.eql([13, 3, 3]));",
+                  "pm.test(\"DPS→SUB arrives earlier on the clock but lasts 55–60 min (WITA→WIB)\", () => body.legs[1].flights.forEach(f => pm.expect(f.duration.total_minutes).to.be.within(55, 60)));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/multi-search/flight/v1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "multi-search",
+                "flight",
+                "v1"
+              ]
+            },
+            "description": "DPS→SUB (18 Dec) and SUB→CGK (20 Dec) come from files/mock/extra.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"legs\": [\n    {\n      \"origin\": \"CGK\",\n      \"destination\": \"DPS\",\n      \"departureDate\": \"2025-12-15\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    },\n    {\n      \"origin\": \"DPS\",\n      \"destination\": \"SUB\",\n      \"departureDate\": \"2025-12-18\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    },\n    {\n      \"origin\": \"SUB\",\n      \"destination\": \"CGK\",\n      \"departureDate\": \"2025-12-20\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Open-jaw (CGK → DPS, then SUB → CGK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"2 legs in request order\", () => pm.expect(body.legs.length).to.eql(2));",
+                  "pm.test(\"SUB→CGK has 3 flights\", () => pm.expect(body.legs[1].metadata.total_results).to.eql(3));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/multi-search/flight/v1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "multi-search",
+                "flight",
+                "v1"
+              ]
+            },
+            "description": "The next leg does not have to start where the previous one ended.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"legs\": [\n    {\n      \"origin\": \"CGK\",\n      \"destination\": \"DPS\",\n      \"departureDate\": \"2025-12-15\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    },\n    {\n      \"origin\": \"SUB\",\n      \"destination\": \"CGK\",\n      \"departureDate\": \"2025-12-20\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Same-day legs",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"2 legs in request order\", () => pm.expect(body.legs.length).to.eql(2));",
+                  "pm.test(\"no DPS→SUB flights on 15 Dec: empty leg, not an error\", () => pm.expect(body.legs[1].flights).to.eql([]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/multi-search/flight/v1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "multi-search",
+                "flight",
+                "v1"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"legs\": [\n    {\n      \"origin\": \"CGK\",\n      \"destination\": \"DPS\",\n      \"departureDate\": \"2025-12-15\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    },\n    {\n      \"origin\": \"DPS\",\n      \"destination\": \"SUB\",\n      \"departureDate\": \"2025-12-15\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Per-leg filters and sort",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"2 legs in request order\", () => pm.expect(body.legs.length).to.eql(2));",
+                  "pm.test(\"leg 1 direct only, sorted by price\", () => { const f = body.legs[0].flights; f.forEach(x => pm.expect(x.stops).to.eql(0)); for (let i = 1; i < f.length; i++) pm.expect(f[i-1].price.amount <= f[i].price.amount).to.be.true; });",
+                  "pm.test(\"leg 2 only GA: GA401\", () => pm.expect(body.legs[1].flights.map(f => f.flight_number)).to.eql([\"GA401\"]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/multi-search/flight/v1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "multi-search",
+                "flight",
+                "v1"
+              ]
+            },
+            "description": "Each leg is a normal search request, so filters and sort can differ per leg.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"legs\": [\n    {\n      \"origin\": \"CGK\",\n      \"destination\": \"DPS\",\n      \"departureDate\": \"2025-12-15\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\",\n      \"maxStops\": 0,\n      \"sortBy\": \"price\"\n    },\n    {\n      \"origin\": \"DPS\",\n      \"destination\": \"CGK\",\n      \"departureDate\": \"2025-12-20\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\",\n      \"airlines\": [\n        \"GA\"\n      ]\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Different cabin per leg",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"2 legs in request order\", () => pm.expect(body.legs.length).to.eql(2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/multi-search/flight/v1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "multi-search",
+                "flight",
+                "v1"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"legs\": [\n    {\n      \"origin\": \"CGK\",\n      \"destination\": \"DPS\",\n      \"departureDate\": \"2025-12-15\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    },\n    {\n      \"origin\": \"DPS\",\n      \"destination\": \"CGK\",\n      \"departureDate\": \"2025-12-20\",\n      \"passengers\": 1,\n      \"cabinClass\": \"business\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Maximum 6 legs",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"6 legs in request order\", () => pm.expect(body.legs.length).to.eql(6));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/multi-search/flight/v1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "multi-search",
+                "flight",
+                "v1"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"legs\": [\n    {\n      \"origin\": \"CGK\",\n      \"destination\": \"DPS\",\n      \"departureDate\": \"2025-12-15\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    },\n    {\n      \"origin\": \"DPS\",\n      \"destination\": \"SUB\",\n      \"departureDate\": \"2025-12-16\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    },\n    {\n      \"origin\": \"SUB\",\n      \"destination\": \"UPG\",\n      \"departureDate\": \"2025-12-17\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    },\n    {\n      \"origin\": \"UPG\",\n      \"destination\": \"DPS\",\n      \"departureDate\": \"2025-12-18\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    },\n    {\n      \"origin\": \"DPS\",\n      \"destination\": \"SOC\",\n      \"departureDate\": \"2025-12-19\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    },\n    {\n      \"origin\": \"SOC\",\n      \"destination\": \"CGK\",\n      \"departureDate\": \"2025-12-20\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Multi-search / Validation (400, 404)",
+      "description": "",
+      "item": [
+        {
+          "name": "Only 1 leg (min 2)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/multi-search/flight/v1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "multi-search",
+                "flight",
+                "v1"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"legs\": [\n    {\n      \"origin\": \"CGK\",\n      \"destination\": \"DPS\",\n      \"departureDate\": \"2025-12-15\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "7 legs (max 6)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/multi-search/flight/v1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "multi-search",
+                "flight",
+                "v1"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"legs\": [\n    {\n      \"origin\": \"CGK\",\n      \"destination\": \"DPS\",\n      \"departureDate\": \"2025-12-15\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    },\n    {\n      \"origin\": \"CGK\",\n      \"destination\": \"DPS\",\n      \"departureDate\": \"2025-12-16\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    },\n    {\n      \"origin\": \"CGK\",\n      \"destination\": \"DPS\",\n      \"departureDate\": \"2025-12-17\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    },\n    {\n      \"origin\": \"CGK\",\n      \"destination\": \"DPS\",\n      \"departureDate\": \"2025-12-18\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    },\n    {\n      \"origin\": \"CGK\",\n      \"destination\": \"DPS\",\n      \"departureDate\": \"2025-12-19\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    },\n    {\n      \"origin\": \"CGK\",\n      \"destination\": \"DPS\",\n      \"departureDate\": \"2025-12-20\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    },\n    {\n      \"origin\": \"CGK\",\n      \"destination\": \"DPS\",\n      \"departureDate\": \"2025-12-21\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Missing legs",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/multi-search/flight/v1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "multi-search",
+                "flight",
+                "v1"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Leg dates go backwards",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/multi-search/flight/v1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "multi-search",
+                "flight",
+                "v1"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"legs\": [\n    {\n      \"origin\": \"CGK\",\n      \"destination\": \"DPS\",\n      \"departureDate\": \"2025-12-15\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    },\n    {\n      \"origin\": \"DPS\",\n      \"destination\": \"CGK\",\n      \"departureDate\": \"2025-12-14\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Passengers differ between legs",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/multi-search/flight/v1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "multi-search",
+                "flight",
+                "v1"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"legs\": [\n    {\n      \"origin\": \"CGK\",\n      \"destination\": \"DPS\",\n      \"departureDate\": \"2025-12-15\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    },\n    {\n      \"origin\": \"DPS\",\n      \"destination\": \"CGK\",\n      \"departureDate\": \"2025-12-20\",\n      \"passengers\": 2,\n      \"cabinClass\": \"economy\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "returnDate inside a leg",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/multi-search/flight/v1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "multi-search",
+                "flight",
+                "v1"
+              ]
+            },
+            "description": "Add the return as its own leg instead.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"legs\": [\n    {\n      \"origin\": \"CGK\",\n      \"destination\": \"DPS\",\n      \"departureDate\": \"2025-12-15\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\",\n      \"returnDate\": \"2025-12-20\"\n    },\n    {\n      \"origin\": \"DPS\",\n      \"destination\": \"SUB\",\n      \"departureDate\": \"2025-12-18\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Invalid leg (origin equals destination)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/multi-search/flight/v1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "multi-search",
+                "flight",
+                "v1"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"legs\": [\n    {\n      \"origin\": \"CGK\",\n      \"destination\": \"DPS\",\n      \"departureDate\": \"2025-12-15\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    },\n    {\n      \"origin\": \"DPS\",\n      \"destination\": \"DPS\",\n      \"departureDate\": \"2025-12-20\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Leg missing required field",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/multi-search/flight/v1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "multi-search",
+                "flight",
+                "v1"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"legs\": [\n    {\n      \"origin\": \"CGK\",\n      \"destination\": \"DPS\",\n      \"departureDate\": \"2025-12-15\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    },\n    {\n      \"origin\": \"DPS\",\n      \"destination\": \"CGK\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Leg with reversed price range",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/multi-search/flight/v1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "multi-search",
+                "flight",
+                "v1"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"legs\": [\n    {\n      \"origin\": \"CGK\",\n      \"destination\": \"DPS\",\n      \"departureDate\": \"2025-12-15\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\",\n      \"minPrice\": 900000,\n      \"maxPrice\": 500000\n    },\n    {\n      \"origin\": \"DPS\",\n      \"destination\": \"CGK\",\n      \"departureDate\": \"2025-12-20\",\n      \"passengers\": 1,\n      \"cabinClass\": \"economy\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Malformed JSON",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/multi-search/flight/v1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "multi-search",
+                "flight",
+                "v1"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"legs\": [",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET is not supported",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/multi-search/flight/v1?origin=CGK",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "multi-search",
+                "flight",
+                "v1"
+              ],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "CGK"
+                }
+              ]
+            },
+            "description": "Multi-search is POST-only; Gin returns 404 for unregistered methods."
+          }
+        }
+      ]
+    }
+  ]
+}
