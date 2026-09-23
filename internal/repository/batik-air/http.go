@@ -55,3 +55,7 @@ func (h *httpImpl) Search(ctx context.Context, params *requestparamsmodel.Reques
 	}
 	return h.mockSearchResponse, nil
 }
+
+// func mapToUnifiedFlights(searchResponse batikairmodel.SearchResponse) []flight.Flight {
+
+// }
