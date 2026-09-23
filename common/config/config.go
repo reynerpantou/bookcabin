@@ -19,7 +19,7 @@ func Load() (*Config, error) {
 	if env == "" {
 		env = "development"
 	}
-	path := filepath.Join("etc", fmt.Sprintf("bookcabin.%s.yaml", env))
+	path := filepath.Join("etc", fmt.Sprintf("files/etc/bookcabin.%s.yaml", env))
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("read config: %w", err)
