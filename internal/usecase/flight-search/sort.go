@@ -14,11 +14,11 @@ const (
 	stopsWeight    = 0.2
 )
 
-func (u *useCaseImpl) rank(flights []flight.Flight, sortBy, sortOrder string) {
-	validate := validateSort(flights, sortBy)
+func (u *useCaseImpl) applySort(flights []flight.Flight, sortBy, sortOrder string) {
+	compare := compareBySortField(flights, sortBy)
 	desc := sortOrder == requestparamsmodel.SortOrderDesc
 	slices.SortStableFunc(flights, func(a, b flight.Flight) int {
-		c := validate(a, b)
+		c := compare(a, b)
 		if desc {
 			c = -c
 		}
@@ -29,7 +29,7 @@ func (u *useCaseImpl) rank(flights []flight.Flight, sortBy, sortOrder string) {
 	})
 }
 
-func validateSort(flights []flight.Flight, sortBy string) func(a, b flight.Flight) int {
+func compareBySortField(flights []flight.Flight, sortBy string) func(a, b flight.Flight) int {
 	switch sortBy {
 	case requestparamsmodel.SortByPrice:
 		return func(a, b flight.Flight) int { return cmp.Compare(a.Price.Amount, b.Price.Amount) }

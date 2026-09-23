@@ -61,7 +61,7 @@ func NewUseCase(ctx context.Context, cfg *config.Config, repositories repository
 	)
 	return &useCaseImpl{
 		providers:   providers,
-		loadTimeout: 2 * time.Second,
+		loadTimeout: cfg.FlightSearch.LoadTimeout.Duration(),
 		cache:       cache,
 	}, nil
 }
